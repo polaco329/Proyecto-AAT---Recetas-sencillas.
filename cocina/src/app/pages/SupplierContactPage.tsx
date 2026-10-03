@@ -1,4 +1,3 @@
-import { useNavigate } from 'react-router';
 import { Mail } from 'lucide-react';
 import { PageFooter } from '../components/PageFooter';
 import { PageHeader } from '../components/PageHeader';
@@ -6,7 +5,12 @@ import { PageSEO } from '../components/PageSEO';
 import { CONTACT_EMAIL, CONTACT_PHONE, LOCATION, SITE_OWNER } from '../data/site';
 
 export function SupplierContactPage() {
-  const navigate = useNavigate();
+  const gmailComposeUrl = `https://mail.google.com/mail/?${new URLSearchParams({
+    view: 'cm',
+    fs: '1',
+    to: CONTACT_EMAIL,
+    su: 'Mensaje desde Recetas Sencillas',
+  }).toString()}`;
 
   return (
     <div className="min-h-screen bg-green-50">
@@ -50,6 +54,20 @@ export function SupplierContactPage() {
               </address>
             </div>
           </div>
+
+          <section className="bg-white rounded-xl shadow-md p-6 sm:p-8" aria-labelledby="contact-form-title">
+            <h2 id="contact-form-title" className="text-xl text-green-800 mb-2">Escríbenos por Gmail</h2>
+            <p className="text-gray-600 mb-6">Se abrirá un borrador dirigido a {CONTACT_EMAIL}. Redacta tu mensaje y envíalo desde Gmail. El destinatario verá la cuenta con la que lo envíes.</p>
+            <a
+              href={gmailComposeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-5 py-3 text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+            >
+              <Mail className="h-5 w-5" aria-hidden="true" />
+              Enviar mensaje
+            </a>
+          </section>
         </main>
       </div>
 

@@ -35,6 +35,22 @@ $routePath = $app_base !== '' && str_starts_with($requestedPath, $app_base)
     ? substr($requestedPath, strlen($app_base))
     : $requestedPath;
 $routePath = '/' . trim($routePath, '/');
+$allowedCategories = ['Todas', 'Postres', 'Carnes', 'Vegano', 'Rápido', 'Desayuno', 'Merienda'];
+$rawSearchTerm = $_GET['q'] ?? '';
+$searchTerm = is_string($rawSearchTerm) ? trim($rawSearchTerm) : '';
+if (preg_match('/^.{0,120}/us', $searchTerm, $searchMatch) === 1) {
+    $searchTerm = $searchMatch[0];
+} else {
+    $searchTerm = '';
+}
+$rawCategory = $_GET['category'] ?? '';
+$searchCategory = is_string($rawCategory) && in_array($rawCategory, $allowedCategories, true)
+    ? $rawCategory
+    : 'Todas';
+$app_form_state = [
+    'search' => ['term' => $searchTerm, 'category' => $searchCategory],
+];
+
 $routeTitles = [
     '/' => 'Cocina fácil y económica',
     '/advanced-search' => 'Búsqueda avanzada',

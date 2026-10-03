@@ -41,6 +41,9 @@
   locales se leen de `.env`, que Git ignora; `.env.example` es la plantilla
   que se conserva en el repositorio.
 
+  El botón de contacto abre un borrador en Gmail dirigido a `CONTACT_EMAIL`;
+  el usuario redacta y envía el mensaje desde su propia cuenta.
+
   ## Desarrollo
 
   Para trabajar con recarga automática:

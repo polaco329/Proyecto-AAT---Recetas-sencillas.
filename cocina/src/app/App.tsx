@@ -19,6 +19,9 @@ import { AboutUsPage } from './pages/AboutUsPage';
 declare global {
   interface Window {
     APP_BASE_PATH?: string;
+    APP_FORM_STATE?: {
+      search?: { term: string; category: string };
+    };
   }
 }
 

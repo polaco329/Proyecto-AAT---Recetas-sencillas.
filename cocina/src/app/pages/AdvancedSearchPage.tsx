@@ -9,8 +9,8 @@ import { PageSEO } from '../components/PageSEO';
 
 export function AdvancedSearchPage() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Todas');
+  const [searchTerm, setSearchTerm] = useState(() => window.APP_FORM_STATE?.search?.term ?? '');
+  const [selectedCategory, setSelectedCategory] = useState(() => window.APP_FORM_STATE?.search?.category ?? 'Todas');
 
   const categories = ['Todas', 'Postres', 'Carnes', 'Vegano', 'Rápido', 'Desayuno', 'Merienda'];
 
@@ -44,7 +44,11 @@ export function AdvancedSearchPage() {
             </h2>
           </section>
 
-          <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8">
+          <form
+            method="get"
+            action={`${window.APP_BASE_PATH || ''}/advanced-search`}
+            className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-8"
+          >
             <div className="mb-4">
               <label htmlFor="search-recipes" className="block text-sm font-medium text-gray-700 mb-2">
                 Buscar por nombre, ingrediente o descripción
@@ -53,9 +57,11 @@ export function AdvancedSearchPage() {
                 <input
                   id="search-recipes"
                   type="search"
+                  name="q"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Ej: chocolate, pollo, vegano..."
+                  maxLength={120}
                   className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
@@ -63,28 +69,28 @@ export function AdvancedSearchPage() {
             </div>
 
             <div>
-              <fieldset>
-                <legend className="block text-sm font-medium text-gray-700 mb-2">Categoría</legend>
-                <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por categoría">
-                  {categories.map((category) => (
-                    <button
-                      key={category}
-                      type="button"
-                      onClick={() => setSelectedCategory(category)}
-                      aria-pressed={selectedCategory === category}
-                      className={`px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                        selectedCategory === category
-                          ? 'bg-green-600 text-white'
-                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
-                    >
-                      {category}
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
+              <label htmlFor="search-category" className="block text-sm font-medium text-gray-700 mb-2">
+                Categoría
+              </label>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <select
+                  id="search-category"
+                  name="category"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="w-full sm:max-w-xs px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500"
+                >
+                  {categories.map((category) => <option key={category} value={category}>{category}</option>)}
+                </select>
+                <button
+                  type="submit"
+                  className="px-5 py-3 rounded-lg bg-green-700 text-white hover:bg-green-800 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                >
+                  Buscar recetas
+                </button>
+              </div>
             </div>
-          </div>
+          </form>
 
           <div className="mb-4">
             <p className="text-gray-600">
