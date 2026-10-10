@@ -13,19 +13,25 @@ import {
   HelpCircle,
   Users,
   Mail,
+  UserRound,
+  ChefHat,
 } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 
 export function MenuDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const mainItems = [
     { id: 1, label: 'Contacto', icon: Mail, path: '/supplier-contact' },
-    { id: 2, label: 'Búsqueda avanzada', icon: Search, path: '/advanced-search' },
-    { id: 3, label: 'Recetas guardadas', icon: Bookmark, path: '/saved-recipes' },
-    { id: 4, label: 'Recetas económicas', icon: DollarSign, path: '/economic-recipes' },
-    { id: 5, label: 'Tips de cocina', icon: Lightbulb, path: '/cooking-tips' },
-    { id: 6, label: 'Recetas para niños', icon: Baby, path: '/kids-recipes' },
+    { id: 2, label: user ? 'Mi cuenta' : 'Iniciar sesión', icon: UserRound, path: user ? '/account' : '/login' },
+    { id: 3, label: 'Búsqueda avanzada', icon: Search, path: '/advanced-search' },
+    { id: 4, label: 'Recetas guardadas', icon: Bookmark, path: '/saved-recipes' },
+    { id: 5, label: 'Recetas económicas', icon: DollarSign, path: '/economic-recipes' },
+    { id: 6, label: 'Tips de cocina', icon: Lightbulb, path: '/cooking-tips' },
+    { id: 7, label: 'Recetas para niños', icon: Baby, path: '/kids-recipes' },
+    { id: 8, label: 'Publicar receta', icon: ChefHat, path: '/publish-recipe' },
   ];
 
   const extraItems = [

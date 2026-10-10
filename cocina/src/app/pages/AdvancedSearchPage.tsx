@@ -6,15 +6,17 @@ import { allRecipes } from '../data/recipes';
 import { PageFooter } from '../components/PageFooter';
 import { PageHeader } from '../components/PageHeader';
 import { PageSEO } from '../components/PageSEO';
+import { useRecipes } from '../context/RecipesContext';
 
 export function AdvancedSearchPage() {
   const navigate = useNavigate();
+  const { communityRecipes, communityRecipesError } = useRecipes();
   const [searchTerm, setSearchTerm] = useState(() => window.APP_FORM_STATE?.search?.term ?? '');
   const [selectedCategory, setSelectedCategory] = useState(() => window.APP_FORM_STATE?.search?.category ?? 'Todas');
 
   const categories = ['Todas', 'Postres', 'Carnes', 'Vegano', 'Rápido', 'Desayuno', 'Merienda'];
 
-  const filteredRecipes = allRecipes.filter((recipe) => {
+  const filteredRecipes = [...communityRecipes, ...allRecipes].filter((recipe) => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recipe.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       recipe.ingredients.some((ing) => ing.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -66,6 +68,11 @@ export function AdvancedSearchPage() {
                 />
                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" aria-hidden="true" />
               </div>
+              {communityRecipesError && (
+                <p role="status" className="mb-4 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                  No se pudieron cargar las recetas de la comunidad. {communityRecipesError}
+                </p>
+              )}
             </div>
 
             <div>

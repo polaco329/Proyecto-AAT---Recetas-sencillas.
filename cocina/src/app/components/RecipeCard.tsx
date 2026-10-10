@@ -1,15 +1,16 @@
 import { Recipe } from '../context/RecipesContext';
 import { useRecipes } from '../context/RecipesContext';
-import { Bookmark, Clock, Users, DollarSign } from 'lucide-react';
+import { Bookmark, Clock, Users, DollarSign, Trash2 } from 'lucide-react';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { getRecipeImageMeta } from '../data/recipeImages';
 
 interface RecipeCardProps {
   recipe: Recipe;
   onClick: () => void;
+  onDelete?: () => void;
 }
 
-export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
+export function RecipeCard({ recipe, onClick, onDelete }: RecipeCardProps) {
   const { isRecipeSaved, saveRecipe, unsaveRecipe } = useRecipes();
   const saved = isRecipeSaved(recipe.id);
   const { src, alt } = getRecipeImageMeta(recipe);
@@ -37,6 +38,19 @@ export function RecipeCard({ recipe, onClick }: RecipeCardProps) {
       >
         <Bookmark className={`w-5 h-5 ${saved ? 'fill-current' : ''}`} />
       </button>
+      {onDelete && (
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          aria-label={`Borrar receta ${recipe.name}`}
+          className="absolute right-14 top-3 z-10 rounded-full bg-red-100 p-2 text-red-700 transition-colors hover:bg-red-200"
+        >
+          <Trash2 className="h-5 w-5" aria-hidden="true" />
+        </button>
+      )}
       <ImageWithFallback
         src={src}
         alt={alt}

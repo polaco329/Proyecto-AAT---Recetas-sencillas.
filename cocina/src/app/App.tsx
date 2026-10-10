@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, useParams } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation, useParams } from 'react-router';
 import { RecipesProvider } from './context/RecipesContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { HomePage } from './pages/HomePage';
 import { CategoryPage } from './pages/CategoryPage';
 import { RecipeDetailPage } from './pages/RecipeDetailPage';
@@ -15,6 +16,9 @@ import { BlogPage } from './pages/BlogPage';
 import { CVPage } from './pages/CVPage';
 import { FAQPage } from './pages/FAQPage';
 import { AboutUsPage } from './pages/AboutUsPage';
+import { LoginPage } from './pages/LoginPage';
+import { AccountPage } from './pages/AccountPage';
+import { CommunityRecipesPage } from './pages/CommunityRecipesPage';
 
 declare global {
   interface Window {
@@ -28,6 +32,25 @@ declare global {
 function CategoryPageWrapper() {
   const { category } = useParams<{ category: string }>();
   return <CategoryPage category={category || ''} />;
+}
+
+function RequireAuth() {
+  const { user, isLoading } = useAuth();
+  const location = useLocation();
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-green-50 px-4 text-green-800">
+        <p role="status">Verificando tu sesión...</p>
+      </main>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace state={{ from: location }} />;
+  }
+
+  return <Outlet />;
 }
 
 function AppShell() {
@@ -45,20 +68,27 @@ function AppShell() {
       </a>
       <div id="main-content" tabIndex={-1}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/category/:category" element={<CategoryPageWrapper />} />
-          <Route path="/recipe/:id" element={<RecipeDetailPage />} />
-          <Route path="/saved-recipes" element={<SavedRecipesPage />} />
-          <Route path="/economic-recipes" element={<EconomicRecipesPage />} />
-          <Route path="/advanced-search" element={<AdvancedSearchPage />} />
-          <Route path="/cooking-tips" element={<CookingTipsPage />} />
-          <Route path="/kids-recipes" element={<KidsRecipesPage />} />
-          <Route path="/supplier-contact" element={<SupplierContactPage />} />
-          <Route path="/curso" element={<CoursePage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/cv" element={<CVPage />} />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/quienes-somos" element={<AboutUsPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<LoginPage />} />
+          <Route element={<RequireAuth />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/account" element={<AccountPage />} />
+            <Route path="/publish-recipe" element={<CommunityRecipesPage />} />
+            <Route path="/category/:category" element={<CategoryPageWrapper />} />
+            <Route path="/recipe/:id" element={<RecipeDetailPage />} />
+            <Route path="/saved-recipes" element={<SavedRecipesPage />} />
+            <Route path="/economic-recipes" element={<EconomicRecipesPage />} />
+            <Route path="/advanced-search" element={<AdvancedSearchPage />} />
+            <Route path="/cooking-tips" element={<CookingTipsPage />} />
+            <Route path="/kids-recipes" element={<KidsRecipesPage />} />
+            <Route path="/supplier-contact" element={<SupplierContactPage />} />
+            <Route path="/curso" element={<CoursePage />} />
+            <Route path="/blog" element={<BlogPage />} />
+            <Route path="/cv" element={<CVPage />} />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/quienes-somos" element={<AboutUsPage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     </>
@@ -67,10 +97,12 @@ function AppShell() {
 
 export default function App() {
   return (
-    <RecipesProvider>
-      <BrowserRouter basename={window.APP_BASE_PATH || '/'}>
-        <AppShell />
-      </BrowserRouter>
-    </RecipesProvider>
+    <AuthProvider>
+      <RecipesProvider>
+        <BrowserRouter basename={window.APP_BASE_PATH || '/'}>
+          <AppShell />
+        </BrowserRouter>
+      </RecipesProvider>
+    </AuthProvider>
   );
 }

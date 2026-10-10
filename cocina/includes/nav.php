@@ -3,6 +3,7 @@ $navigation_links = [
     ['Inicio', '/'],
     ['Búsqueda', '/advanced-search'],
     ['Recetas económicas', '/economic-recipes'],
+    ['Iniciar sesión', '/login'],
     ['Consejos', '/cooking-tips'],
     ['Curso', '/curso'],
     ['Blog', '/blog'],

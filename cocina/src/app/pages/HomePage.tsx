@@ -16,12 +16,14 @@ import {
   ChevronUp,
   SunMedium,
   MoonStar,
+  UserRound,
 } from 'lucide-react';
 import { CategoryCard } from '../components/CategoryCard';
 import { PastaPackage } from '../components/PastaPackage';
 import { MenuDropdown } from '../components/MenuDropdown';
-import { DEFAULT_DESCRIPTION, FOUNDED_YEAR, LOCATION, SITE_KEYWORD, SITE_NAME, SITE_OWNER } from '../data/site';
+import { CONTACT_EMAIL, DEFAULT_DESCRIPTION, FOUNDED_YEAR, LOCATION, SITE_KEYWORD, SITE_NAME, SITE_OWNER } from '../data/site';
 import { PageSEO } from '../components/PageSEO';
+import { useAuth } from '../context/AuthContext';
 
 const galleryImages = [
   {
@@ -62,6 +64,7 @@ const accordionSections = [
 
 export function HomePage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [darkMode, setDarkMode] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [openSection, setOpenSection] = useState<number | null>(1);
@@ -69,11 +72,11 @@ export function HomePage() {
   const [expandedImage, setExpandedImage] = useState(galleryImages[0]);
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     message: '',
   });
-  const [errors, setErrors] = useState<{ name?: string; email?: string; message?: string }>({});
-  const [submittedData, setSubmittedData] = useState<typeof formData | null>(null);
+  const [errors, setErrors] = useState<{ name?: string; message?: string }>({});
+  const [formStatus, setFormStatus] = useState('');
+  const [gmailUrl, setGmailUrl] = useState('');
 
   useEffect(() => {
     window.alert('¡Hola! Bienvenido a Recetas Sencillas.');
@@ -102,6 +105,7 @@ export function HomePage() {
     { id: 3, label: 'CV Chef', icon: FileText, path: '/cv', color: 'bg-teal-50 hover:bg-teal-100 text-teal-700' },
     { id: 4, label: 'Preguntas Frecuentes', icon: HelpCircle, path: '/faq', color: 'bg-orange-50 hover:bg-orange-100 text-orange-700' },
     { id: 5, label: 'Quiénes Somos', icon: Users, path: '/quienes-somos', color: 'bg-pink-50 hover:bg-pink-100 text-pink-700' },
+    { id: 6, label: 'Publicar receta', icon: BookOpen, path: '/publish-recipe', color: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' },
   ];
 
   const validateField = (name: string, value: string) => {
@@ -109,11 +113,8 @@ export function HomePage() {
       return 'Este campo es obligatorio.';
     }
 
-    if (name === 'email') {
-      const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailPattern.test(value)) {
-        return 'Ingresa un correo electrónico válido.';
-      }
+    if (name === 'message' && value.trim().length > 2000) {
+      return 'El mensaje no puede superar los 2000 caracteres.';
     }
 
     return '';
@@ -127,6 +128,8 @@ export function HomePage() {
       ...prev,
       [name]: validateField(name, value),
     }));
+    setFormStatus('');
+    setGmailUrl('');
   };
 
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
@@ -134,18 +137,37 @@ export function HomePage() {
 
     const nextErrors = {
       name: validateField('name', formData.name),
-      email: validateField('email', formData.email),
       message: validateField('message', formData.message),
     };
 
     setErrors(nextErrors);
+    setFormStatus('');
 
     const hasErrors = Object.values(nextErrors).some(Boolean);
     if (hasErrors) {
       return;
     }
 
-    setSubmittedData(formData);
+    const subject = `Mensaje desde Recetas Sencillas de ${formData.name.trim()}`;
+    const body = [
+      `Nombre: ${formData.name.trim()}`,
+      `Correo de la cuenta: ${user?.email ?? 'No disponible'}`,
+      '',
+      formData.message.trim(),
+    ].join('\n');
+    const gmailUrl = new URL('https://mail.google.com/mail/');
+    gmailUrl.search = new URLSearchParams({
+      view: 'cm',
+      fs: '1',
+      to: CONTACT_EMAIL,
+      su: subject,
+      body,
+    }).toString();
+
+    const composeUrl = gmailUrl.toString();
+    window.open(composeUrl, '_blank', 'noopener,noreferrer');
+    setGmailUrl(composeUrl);
+    setFormStatus('Revisa el borrador y pulsa Enviar en Gmail para completar el envío.');
   };
 
   const handleNextImage = () => {
@@ -176,15 +198,25 @@ export function HomePage() {
             Cocina casera, nutritiva y deliciosa para toda la familia en {LOCATION}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setDarkMode((current) => !current)}
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-2 shadow-sm transition-colors ${darkMode ? 'bg-amber-400 text-slate-900' : 'bg-slate-200 text-slate-700'}`}
-          aria-label="Cambiar tema"
-        >
-          {darkMode ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
-          {darkMode ? 'Modo claro' : 'Modo oscuro'}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate(user ? '/account' : '/login')}
+            className="inline-flex items-center gap-2 rounded-full bg-green-700 px-4 py-2 text-white shadow-sm transition-colors hover:bg-green-800"
+          >
+            <UserRound className="h-4 w-4" />
+            {user ? 'Mi cuenta' : 'Iniciar sesión'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setDarkMode((current) => !current)}
+            className={`inline-flex items-center gap-2 rounded-full px-4 py-2 shadow-sm transition-colors ${darkMode ? 'bg-amber-400 text-slate-900' : 'bg-slate-200 text-slate-700'}`}
+            aria-label="Cambiar tema"
+          >
+            {darkMode ? <SunMedium className="h-4 w-4" /> : <MoonStar className="h-4 w-4" />}
+            {darkMode ? 'Modo claro' : 'Modo oscuro'}
+          </button>
+        </div>
       </header>
 
       <main className="container mx-auto px-4 py-8 flex-1">
@@ -239,7 +271,7 @@ export function HomePage() {
 
         <section className="mb-12 max-w-4xl mx-auto">
           <h2 className={`text-center text-2xl mb-6 ${darkMode ? 'text-emerald-300' : 'text-green-700'}`}>Más en nuestro sitio</h2>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {extraPages.map((page) => (
               <button
                 key={page.id}
@@ -323,7 +355,10 @@ export function HomePage() {
         </section>
 
         <section className={`max-w-3xl mx-auto mb-12 rounded-2xl p-6 shadow-md ${darkMode ? 'bg-slate-800' : 'bg-white'}`}>
-          <h3 className={`text-2xl font-semibold mb-5 ${darkMode ? 'text-emerald-300' : 'text-green-700'}`}>Validación del formulario</h3>
+          <h3 className={`text-2xl font-semibold mb-2 ${darkMode ? 'text-emerald-300' : 'text-green-700'}`}>Formulario de contacto</h3>
+          <p className={`mb-5 text-sm ${darkMode ? 'text-slate-300' : 'text-gray-600'}`}>
+            Se abrirá Gmail dirigido a <strong>{CONTACT_EMAIL}</strong>. El correo de tu cuenta se incluirá en el mensaje: <strong>{user?.email}</strong>.
+          </p>
           <form onSubmit={handleSubmit} noValidate className="space-y-5">
             <div>
               <label htmlFor="name" className={`block mb-1 text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-gray-700'}`}>
@@ -333,28 +368,13 @@ export function HomePage() {
                 id="name"
                 name="name"
                 type="text"
+                maxLength={120}
                 value={formData.name}
                 onChange={handleInputChange}
                 className={`w-full rounded-lg border px-3 py-2 outline-none ${darkMode ? 'border-slate-600 bg-slate-900 text-white' : 'border-gray-300 bg-white text-gray-900'} ${errors.name ? 'border-red-500' : ''}`}
                 placeholder="Escribe tu nombre"
               />
               {errors.name && <p className="mt-1 text-sm text-red-500">{errors.name}</p>}
-            </div>
-
-            <div>
-              <label htmlFor="email" className={`block mb-1 text-sm font-medium ${darkMode ? 'text-slate-200' : 'text-gray-700'}`}>
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className={`w-full rounded-lg border px-3 py-2 outline-none ${darkMode ? 'border-slate-600 bg-slate-900 text-white' : 'border-gray-300 bg-white text-gray-900'} ${errors.email ? 'border-red-500' : ''}`}
-                placeholder="nombre@ejemplo.com"
-              />
-              {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
             </div>
 
             <div>
@@ -367,29 +387,37 @@ export function HomePage() {
                 value={formData.message}
                 onChange={handleInputChange}
                 rows={4}
+                maxLength={2000}
                 className={`w-full rounded-lg border px-3 py-2 outline-none ${darkMode ? 'border-slate-600 bg-slate-900 text-white' : 'border-gray-300 bg-white text-gray-900'} ${errors.message ? 'border-red-500' : ''}`}
                 placeholder="Cuéntanos cuál receta te gustaría probar"
               />
               {errors.message && <p className="mt-1 text-sm text-red-500">{errors.message}</p>}
+              <p className={`mt-1 text-right text-xs ${darkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                {formData.message.length}/2000
+              </p>
             </div>
 
-            <button type="submit" className="rounded-lg bg-emerald-600 px-5 py-2.5 text-white hover:bg-emerald-700">
+            <button
+              type="submit"
+              className="rounded-lg bg-emerald-600 px-5 py-2.5 text-white hover:bg-emerald-700"
+            >
               Enviar formulario
             </button>
           </form>
 
-          {submittedData && (
-            <div className={`mt-6 rounded-xl border p-4 ${darkMode ? 'border-emerald-700 bg-slate-900' : 'border-emerald-200 bg-emerald-50'}`}>
-              <h4 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-emerald-300' : 'text-green-700'}`}>Resumen antes de enviar</h4>
-              <p className={darkMode ? 'text-slate-200' : 'text-gray-700'}>
-                <strong>Nombre:</strong> {submittedData.name}
-              </p>
-              <p className={darkMode ? 'text-slate-200' : 'text-gray-700'}>
-                <strong>Email:</strong> {submittedData.email}
-              </p>
-              <p className={darkMode ? 'text-slate-200' : 'text-gray-700'}>
-                <strong>Mensaje:</strong> {submittedData.message}
-              </p>
+          {formStatus && (
+            <div role="status" className={`mt-5 rounded-xl border p-4 text-sm ${darkMode ? 'border-emerald-700 bg-slate-900 text-emerald-200' : 'border-emerald-200 bg-emerald-50 text-green-800'}`}>
+              <p>{formStatus}</p>
+              {gmailUrl && (
+                <a
+                  href={gmailUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-2 inline-block font-semibold underline underline-offset-2"
+                >
+                  Si Gmail no se abrió, haz clic aquí
+                </a>
+              )}
             </div>
           )}
         </section>

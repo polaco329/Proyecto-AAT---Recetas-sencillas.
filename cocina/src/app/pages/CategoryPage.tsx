@@ -6,6 +6,7 @@ import { getRecipesByCategory } from '../data/recipes';
 import { PageSEO } from '../components/PageSEO';
 import { getCategoryImageMeta } from '../data/recipeImages';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
+import { useRecipes } from '../context/RecipesContext';
 
 interface CategoryPageProps {
   category: string;
@@ -13,7 +14,11 @@ interface CategoryPageProps {
 
 export function CategoryPage({ category }: CategoryPageProps) {
   const navigate = useNavigate();
-  const recipes = getRecipesByCategory(category);
+  const { communityRecipes, communityRecipesError } = useRecipes();
+  const recipes = [
+    ...communityRecipes.filter((recipe) => recipe.category === category),
+    ...getRecipesByCategory(category),
+  ];
   const categoryImage = getCategoryImageMeta(category);
 
   return (
@@ -46,6 +51,11 @@ export function CategoryPage({ category }: CategoryPageProps) {
             <br />
             Haz clic en cualquier receta para ver ingredientes y preparación.
           </p>
+          {communityRecipesError && (
+            <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+              No se pudieron cargar las recetas de la comunidad. {communityRecipesError}
+            </p>
+          )}
         </section>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

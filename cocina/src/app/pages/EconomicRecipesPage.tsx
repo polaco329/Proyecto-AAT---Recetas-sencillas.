@@ -5,10 +5,15 @@ import { getEconomicRecipes } from '../data/recipes';
 import { PageFooter } from '../components/PageFooter';
 import { PageHeader } from '../components/PageHeader';
 import { PageSEO } from '../components/PageSEO';
+import { useRecipes } from '../context/RecipesContext';
 
 export function EconomicRecipesPage() {
   const navigate = useNavigate();
-  const recipes = getEconomicRecipes();
+  const { communityRecipes, communityRecipesError } = useRecipes();
+  const recipes = [
+    ...communityRecipes.filter((recipe) => recipe.price < 5000),
+    ...getEconomicRecipes(),
+  ];
 
   return (
     <div className="min-h-screen bg-green-50">
@@ -33,6 +38,11 @@ export function EconomicRecipesPage() {
               Todas las recetas en esta sección cuestan menos de <strong>$5.000 pesos argentinos</strong> por porción.
               Seleccionadas para garantizar sabor, nutrición y economía al mismo tiempo.
             </p>
+            {communityRecipesError && (
+              <p role="status" className="mt-3 rounded-lg bg-amber-50 p-3 text-sm text-amber-800">
+                No se pudieron cargar las recetas de la comunidad. {communityRecipesError}
+              </p>
+            )}
           </section>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

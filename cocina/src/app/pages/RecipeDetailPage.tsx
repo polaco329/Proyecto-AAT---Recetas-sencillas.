@@ -1,21 +1,41 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
-import { Clock, Users, DollarSign, Bookmark } from 'lucide-react';
+import { Clock, Users, DollarSign, Bookmark, Trash2 } from 'lucide-react';
 import { allRecipes } from '../data/recipes';
 import { useRecipes } from '../context/RecipesContext';
+import { useAuth } from '../context/AuthContext';
 import { PageHeader } from '../components/PageHeader';
 import { PageFooter } from '../components/PageFooter';
 import { PageSEO } from '../components/PageSEO';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import { getRecipeImageMeta } from '../data/recipeImages';
+import { RecipeComments } from '../components/RecipeComments';
 
 export function RecipeDetailPage() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { isRecipeSaved, saveRecipe, unsaveRecipe } = useRecipes();
+  const {
+    isRecipeSaved,
+    saveRecipe,
+    unsaveRecipe,
+    communityRecipes,
+    isLoadingCommunityRecipes,
+    deleteCommunityRecipe,
+  } = useRecipes();
+  const { user } = useAuth();
+  const [deleteError, setDeleteError] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const recipe = allRecipes.find((r) => r.id === id);
+  const recipe = allRecipes.find((r) => r.id === id) ?? communityRecipes.find((r) => r.id === id);
 
   if (!recipe) {
+    if (isLoadingCommunityRecipes) {
+      return (
+        <main className="flex min-h-screen items-center justify-center bg-green-50 px-4 text-green-800">
+          <p role="status">Cargando receta...</p>
+        </main>
+      );
+    }
     return (
       <div className="min-h-screen bg-green-50 flex items-center justify-center px-4">
         <PageSEO
@@ -48,6 +68,22 @@ export function RecipeDetailPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!window.confirm(`¿Seguro que quieres borrar "${recipe.name}"? Esta acción no se puede deshacer.`)) {
+      return;
+    }
+
+    setDeleteError('');
+    setIsDeleting(true);
+    try {
+      await deleteCommunityRecipe(recipe.id);
+      navigate('/publish-recipe', { replace: true });
+    } catch (error) {
+      setDeleteError(error instanceof Error ? error.message : 'No se pudo borrar la receta.');
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-green-50">
       <PageSEO
@@ -77,17 +113,34 @@ export function RecipeDetailPage() {
                   {recipe.category}
                 </span>
                 <p className="text-base sm:text-lg text-gray-600">{recipe.description}</p>
+                {recipe.authorName && (
+                  <p className="mt-2 text-sm text-gray-500">Compartida por {recipe.authorName}</p>
+                )}
               </div>
-              <button
-                onClick={handleSave}
-                aria-label={saved ? 'Quitar de guardadas' : 'Guardar receta'}
-                className={`p-3 rounded-full transition-all shrink-0 self-end sm:self-start ${
-                  saved ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-50'
-                }`}
-              >
-                <Bookmark className={`w-6 h-6 ${saved ? 'fill-current' : ''}`} />
-              </button>
+              <div className="flex shrink-0 items-center gap-2 self-end sm:self-start">
+                {recipe.userId === user?.id && (
+                  <button
+                    type="button"
+                    onClick={() => void handleDelete()}
+                    disabled={isDeleting}
+                    aria-label={`Borrar receta ${recipe.name}`}
+                    className="rounded-full bg-red-100 p-3 text-red-700 transition-colors hover:bg-red-200 disabled:opacity-60"
+                  >
+                    <Trash2 className="h-6 w-6" aria-hidden="true" />
+                  </button>
+                )}
+                <button
+                  onClick={handleSave}
+                  aria-label={saved ? 'Quitar de guardadas' : 'Guardar receta'}
+                  className={`rounded-full p-3 transition-all ${
+                    saved ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-green-50'
+                  }`}
+                >
+                  <Bookmark className={`h-6 w-6 ${saved ? 'fill-current' : ''}`} />
+                </button>
+              </div>
             </div>
+            {deleteError && <p role="alert" className="mb-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">{deleteError}</p>}
 
             <div className="flex flex-wrap gap-4 sm:gap-6 mb-8 p-4 bg-green-50 rounded-lg">
               <div className="flex items-center gap-2">
@@ -137,6 +190,7 @@ export function RecipeDetailPage() {
             </section>
           </div>
         </article>
+        <RecipeComments recipeId={recipe.id} />
       </main>
 
       <PageFooter currentPage={`/recipe/${recipe.id}`} />
