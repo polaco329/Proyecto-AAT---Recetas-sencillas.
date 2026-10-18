@@ -17,6 +17,7 @@ import {
   ChefHat,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { isAdminEmail } from '../lib/admin';
 
 export function MenuDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,6 +34,9 @@ export function MenuDropdown() {
     { id: 7, label: 'Recetas para niños', icon: Baby, path: '/kids-recipes' },
     { id: 8, label: 'Publicar receta', icon: ChefHat, path: '/publish-recipe' },
   ];
+  if (isAdminEmail(user?.email)) {
+    mainItems.push({ id: 9, label: 'Administrar recetas', icon: ChefHat, path: '/admin/recetas' });
+  }
 
   const extraItems = [
     { id: 7, label: 'Curso de Cocina', icon: BookOpen, path: '/curso' },

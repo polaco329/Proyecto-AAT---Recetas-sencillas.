@@ -89,6 +89,32 @@
   La política RLS impide borrar recetas de otras personas; al eliminar una
   receta también se eliminan sus comentarios asociados.
 
+  ## Administración de recetas
+
+  La ruta `/admin/recetas` integra un CRUD sobre `public.community_recipes`
+  para la cuenta `fsfiligoyborkoski@gmail.com`. La ruta comprueba la sesión y
+  el correo, y Supabase aplica una segunda autorización con RLS para crear,
+  editar y borrar recetas. Para habilitar el panel, ejecuta
+  `supabase/migrations/20261018100000_admin_community_recipe_crud.sql` en el
+  SQL Editor después de las migraciones anteriores. La comprobación del correo
+  en la interfaz solo controla navegación; las políticas de la base de datos
+  son las que protegen las operaciones.
+
+  El cliente usa Supabase/PostgREST con filtros y valores enviados como
+  parámetros de la API; no ejecuta SQL desde el navegador ni utiliza PDO.
+  React escapa los valores al mostrarlos como texto, sin insertar HTML
+  proporcionado por usuarios.
+
+  ## Blog, artículos y comentarios
+
+  Ejecuta `supabase/migrations/20261018110000_create_blog_articles_and_comments.sql`
+  en el SQL Editor de Supabase. La migración guarda los artículos
+  actuales como contenido inicial y crea `public.blog_posts` y
+  `public.blog_comments`. Cualquier usuario autenticado puede comentar, editar
+  o borrar sus propios comentarios. Solo `fsfiligoyborkoski@gmail.com` puede
+  crear, editar o borrar artículos y moderar comentarios. Las reglas se
+  verifican mediante RLS en la base de datos.
+
   ## Despliegue en Vercel
 
   El proyecto Vite está dentro de la carpeta `cocina` del repositorio. En la

@@ -12,6 +12,7 @@ import {
   FileText,
   HelpCircle,
   Users,
+  ChefHat,
   ChevronDown,
   ChevronUp,
   SunMedium,
@@ -24,6 +25,7 @@ import { MenuDropdown } from '../components/MenuDropdown';
 import { CONTACT_EMAIL, DEFAULT_DESCRIPTION, FOUNDED_YEAR, LOCATION, SITE_KEYWORD, SITE_NAME, SITE_OWNER } from '../data/site';
 import { PageSEO } from '../components/PageSEO';
 import { useAuth } from '../context/AuthContext';
+import { isAdminEmail } from '../lib/admin';
 
 const galleryImages = [
   {
@@ -106,6 +108,12 @@ export function HomePage() {
     { id: 4, label: 'Preguntas Frecuentes', icon: HelpCircle, path: '/faq', color: 'bg-orange-50 hover:bg-orange-100 text-orange-700' },
     { id: 5, label: 'Quiénes Somos', icon: Users, path: '/quienes-somos', color: 'bg-pink-50 hover:bg-pink-100 text-pink-700' },
     { id: 6, label: 'Publicar receta', icon: BookOpen, path: '/publish-recipe', color: 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700' },
+    ...(isAdminEmail(user?.email)
+      ? [
+        { id: 7, label: 'Administrar recetas', icon: ChefHat, path: '/admin/recetas', color: 'bg-green-100 hover:bg-green-200 text-green-800' },
+        { id: 8, label: 'Administrar blogs', icon: BookOpen, path: '/blog#blog-admin-form', color: 'bg-purple-100 hover:bg-purple-200 text-purple-800' },
+      ]
+      : []),
   ];
 
   const validateField = (name: string, value: string) => {

@@ -144,18 +144,6 @@ export function FAQPage() {
           </section>
         ))}
 
-        <div className="bg-green-700 text-white rounded-xl p-6 text-center mt-8">
-          <h3 className="text-white mb-2">¿Aún tienes preguntas?</h3>
-          <p className="text-green-100 mb-4 text-sm">
-            Escríbeme por correo y con gusto te respondo.
-          </p>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
-            className="inline-block bg-white text-green-700 px-6 py-2 rounded-lg hover:bg-green-50 transition-colors text-sm"
-          >
-            Enviar Consulta
-          </a>
-        </div>
       </main>
 
       <PageFooter currentPage="/faq" />

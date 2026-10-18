@@ -1,312 +1,369 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
-import { MessageSquare, User, Calendar, Tag } from 'lucide-react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Calendar, Pencil, Plus, RefreshCw, Save, Tag, Trash2, User, X } from 'lucide-react';
 import { PageFooter } from '../components/PageFooter';
 import { PageHeader } from '../components/PageHeader';
 import { PageSEO } from '../components/PageSEO';
-
-interface Comment {
-  id: number;
-  author: string;
-  date: string;
-  content: string;
-}
+import { BlogComments } from '../components/BlogComments';
+import { useAuth } from '../context/AuthContext';
+import { isAdminEmail } from '../lib/admin';
+import { supabase, supabaseConfigurationMessage } from '../lib/supabase';
 
 interface BlogPost {
-  id: number;
+  id: string;
   title: string;
   subtitle: string;
   category: string;
-  date: string;
-  author: string;
+  author_name: string;
   content: string[];
   tip: string;
-  comments: Comment[];
+  created_at: string;
 }
 
-const blogPosts: BlogPost[] = [
-  {
-    id: 1,
-    title: '5 Errores Comunes al Cocinar Pasta',
-    subtitle: 'Evita estos errores y logra la pasta perfecta cada vez',
-    category: 'Técnicas',
-    date: '10 de junio, 2025',
-    author: 'Francisco S. Sfiligoy Borkoski',
-    content: [
-      'La pasta es uno de los platillos más populares del mundo, pero también uno de los más maltratados en la cocina casera. Muchas personas cometen errores básicos que afectan significativamente el resultado final.',
-      'El primer gran error es no salar suficientemente el agua. El agua debe estar "salada como el mar" — esto no es exageración. La pasta absorbe sabor principalmente durante la cocción, y si el agua no tiene sal, la pasta será insípida por dentro sin importar qué salsa uses.',
-      'El segundo error es enjuagar la pasta después de colarla. Al hacer esto eliminas el almidón superficial que ayuda a que la salsa se adhiera mejor. La única excepción es cuando vas a usar la pasta en ensaladas frías.',
-      'El tercer error es romper los espaguetis antes de cocinarlos. En Italia esto se considera casi un insulto culinario. Los espaguetis están diseñados para ser comidos enrollados en el tenedor — su longitud es parte de la experiencia.',
-    ],
-    tip: 'Guarda siempre una taza del agua de cocción de la pasta. Esta agua almidonada es oro líquido para ajustar la consistencia de tu salsa.',
-    comments: [
-      {
-        id: 1,
-        author: 'Carlos M.',
-        date: '11 jun 2025',
-        content: '¡Excelente artículo! No sabía lo del agua de cocción. Lo probaré hoy mismo.',
-      },
-      {
-        id: 2,
-        author: 'Ana García',
-        date: '12 jun 2025',
-        content: 'Siempre enjuagaba la pasta y nunca entendía por qué la salsa no se pegaba bien. ¡Ahora tiene sentido!',
-      },
-      {
-        id: 3,
-        author: 'Luis T.',
-        date: '13 jun 2025',
-        content: 'Muy útil. ¿Podrían hacer un artículo sobre tipos de pasta y qué salsa va con cada una?',
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: 'Cómo Planificar Comidas para Toda la Semana',
-    subtitle: 'Ahorra tiempo y dinero con una buena planificación semanal',
-    category: 'Organización',
-    date: '5 de junio, 2025',
-    author: 'Francisco S. Sfiligoy Borkoski',
-    content: [
-      'Planificar las comidas de la semana con anticipación es uno de los hábitos más transformadores que puedes adoptar en tu vida culinaria. No solo ahorras tiempo y dinero, sino que también reduces el estrés de la pregunta diaria: "¿Qué cocinamos hoy?"',
-      'El proceso comienza los domingos. Dedica 20 minutos a revisar qué tienes en la nevera y despensa, luego decide el menú de lunes a viernes. Los fines de semana suelen ser más flexibles, así que puedes improvisar.',
-      'Un truco poderoso es cocinar en lotes (batch cooking). Por ejemplo, puedes cocer una olla grande de arroz el domingo que sirva para varios días. También puedes dejar marinadas las carnes, cortar vegetales y preparar bases de salsas que uses durante la semana.',
-      'La clave del éxito es la variedad. Asegúrate de incluir diferentes proteínas (legumbres, carnes, huevos, pescado), variedad de vegetales y distintas técnicas de cocción para que las comidas no se vuelvan monótonas.',
-    ],
-    tip: 'Haz una lista de compras organizada por secciones del supermercado (lácteos, carnes, verduras, despensa). Ahorrarás tiempo y evitarás compras impulsivas.',
-    comments: [
-      {
-        id: 1,
-        author: 'Sofía R.',
-        date: '6 jun 2025',
-        content: 'Llevo 3 semanas haciendo esto y el cambio es increíble. Gasto mucho menos y como mucho mejor.',
-      },
-      {
-        id: 2,
-        author: 'Martín B.',
-        date: '7 jun 2025',
-        content: '¿Tienen alguna plantilla de planificación descargable? Sería muy útil para empezar.',
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: 'Guía de Especias para Principiantes',
-    subtitle: 'Las especias esenciales y cómo combinarlas correctamente',
-    category: 'Ingredientes',
-    date: '1 de junio, 2025',
-    author: 'Francisco S. Sfiligoy Borkoski',
-    content: [
-      'Las especias son el alma de la cocina. Con los mismos ingredientes básicos, las especias pueden transformar un plato ordinario en algo extraordinario. Sin embargo, para muchos cocineros principiantes, el mundo de las especias puede resultar abrumador.',
-      'Comienza con un botiquín básico de especias: sal, pimienta negra, comino, pimentón (dulce y ahumado), orégano, ajo en polvo, cúrcuma y canela. Con estas 8 especias puedes preparar una variedad enorme de platillos de distintas cocinas del mundo.',
-      'El secreto para usar especias correctamente es tostarlas brevemente en una sartén seca antes de usarlas. Esto activa sus aceites esenciales y multiplica su sabor e intensidad. Hazlo a fuego medio y mueve constantemente para que no se quemen.',
-      'Aprende las combinaciones clásicas: comino + cilantro + cúrcuma para cocina india; pimentón + orégano + ajo para cocina mediterránea; canela + comino + jengibre para cocina árabe. Estas combinaciones son tu punto de partida.',
-    ],
-    tip: 'Almacena las especias en frascos herméticos, alejadas del calor y la luz directa. Las especias molidas duran entre 1 y 3 años si se almacenan correctamente.',
-    comments: [
-      {
-        id: 1,
-        author: 'Diana P.',
-        date: '2 jun 2025',
-        content: 'No sabía lo de tostar las especias. ¡Voy a probarlo esta noche!',
-      },
-      {
-        id: 2,
-        author: 'Roberto K.',
-        date: '3 jun 2025',
-        content: 'Artículo excelente. La parte de las combinaciones clásicas es muy práctica.',
-      },
-      {
-        id: 3,
-        author: 'Valentina S.',
-        date: '4 jun 2025',
-        content: 'Podrían profundizar más en especias latinoamericanas como el achiote o el ají amarillo.',
-      },
-    ],
-  },
-];
+interface PostForm {
+  title: string;
+  subtitle: string;
+  category: string;
+  content: string;
+  tip: string;
+}
 
-function CommentSection({ comments, postId }: { comments: Comment[]; postId: number }) {
-  const [newComment, setNewComment] = useState('');
-  const [author, setAuthor] = useState('');
-  const [allComments, setAllComments] = useState<Comment[]>(comments);
+const emptyForm: PostForm = {
+  title: '',
+  subtitle: '',
+  category: '',
+  content: '',
+  tip: '',
+};
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newComment.trim() || !author.trim()) return;
-    const comment: Comment = {
-      id: allComments.length + 1,
-      author: author.trim(),
-      date: 'Ahora mismo',
-      content: newComment.trim(),
-    };
-    setAllComments((prev) => [...prev, comment]);
-    setNewComment('');
-    setAuthor('');
+function formFromPost(post: BlogPost): PostForm {
+  return {
+    title: post.title,
+    subtitle: post.subtitle,
+    category: post.category,
+    content: post.content.join('\n\n'),
+    tip: post.tip,
   };
+}
 
-  return (
-    <section className="mt-8 pt-6 border-t border-gray-200">
-      <h4 className="text-gray-800 mb-4 flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-green-600" />
-        Comentarios ({allComments.length})
-      </h4>
+function validatePost(form: PostForm) {
+  const paragraphs = form.content.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean);
+  if (form.title.trim().length < 5 || form.title.trim().length > 150) {
+    return 'El título debe tener entre 5 y 150 caracteres.';
+  }
+  if (form.subtitle.trim().length < 5 || form.subtitle.trim().length > 200) {
+    return 'El resumen debe tener entre 5 y 200 caracteres.';
+  }
+  if (form.category.trim().length < 2 || form.category.trim().length > 50) {
+    return 'La categoría debe tener entre 2 y 50 caracteres.';
+  }
+  if (paragraphs.length < 1 || paragraphs.length > 30 || paragraphs.some((paragraph) => paragraph.length > 5000)) {
+    return 'Escribe entre 1 y 30 párrafos, con un máximo de 5000 caracteres por párrafo.';
+  }
+  if (form.tip.trim().length < 3 || form.tip.trim().length > 1000) {
+    return 'El consejo debe tener entre 3 y 1000 caracteres.';
+  }
+  return '';
+}
 
-      {/* Comments list */}
-      <div className="space-y-4 mb-6">
-        {allComments.map((comment) => (
-          <article key={comment.id} className="bg-gray-50 rounded-lg p-4">
-            <header className="flex items-center gap-2 mb-2">
-              <div className="bg-green-100 p-1.5 rounded-full">
-                <User className="w-4 h-4 text-green-600" />
-              </div>
-              <h5 className="text-gray-700">{comment.author}</h5>
-              <span className="text-gray-400 text-xs">· {comment.date}</span>
-            </header>
-            <p className="text-gray-600 text-sm">{comment.content}</p>
-          </article>
-        ))}
-      </div>
-
-      <hr className="border-gray-200 mb-4" />
-
-      {/* Comment form */}
-      <div>
-        <h5 className="text-gray-700 mb-3">Dejar un comentario</h5>
-        <form onSubmit={handleSubmit} className="space-y-3">
-          <div>
-            <label htmlFor={`comment-author-${postId}`} className="block text-sm font-medium text-gray-700 mb-2">
-              Tu nombre
-            </label>
-            <input
-              id={`comment-author-${postId}`}
-              name="author"
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Tu nombre"
-              required
-              aria-required="true"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-sm"
-            />
-          </div>
-          <div>
-            <label htmlFor={`comment-content-${postId}`} className="block text-sm font-medium text-gray-700 mb-2">
-              Comentario
-            </label>
-            <textarea
-              id={`comment-content-${postId}`}
-              name="comment"
-              value={newComment}
-              onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Escribe tu comentario..."
-              rows={3}
-              required
-              aria-required="true"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-400 text-sm resize-none"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={!newComment.trim() || !author.trim()}
-            className="px-5 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors text-sm"
-          >
-            Publicar Comentario
-          </button>
-        </form>
-      </div>
-    </section>
-  );
+function formattedDate(date: string) {
+  return new Intl.DateTimeFormat('es-AR', { dateStyle: 'long' }).format(new Date(date));
 }
 
 export function BlogPage() {
-  const navigate = useNavigate();
-  const [expandedPost, setExpandedPost] = useState<number | null>(1);
+  const { user } = useAuth();
+  const isAdmin = isAdminEmail(user?.email);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
+  const [expandedPost, setExpandedPost] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [statusMessage, setStatusMessage] = useState('');
+  const [form, setForm] = useState<PostForm>(emptyForm);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isAdmin && window.location.hash === '#blog-admin-form') {
+      document.getElementById('blog-admin-form')?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [isAdmin]);
+
+  const loadPosts = useCallback(async () => {
+    if (!supabase) {
+      setErrorMessage(supabaseConfigurationMessage);
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('id, title, subtitle, category, author_name, content, tip, created_at')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        setErrorMessage(`No se pudieron cargar los artículos: ${error.message}`);
+      } else {
+        const articles = (data ?? []) as BlogPost[];
+        setPosts(articles);
+        setExpandedPost((current) => current && articles.some((post) => post.id === current)
+          ? current
+          : articles[0]?.id ?? null);
+      }
+    } catch (error) {
+      setErrorMessage(`No se pudieron cargar los artículos: ${error instanceof Error ? error.message : 'error inesperado.'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPosts();
+  }, [loadPosts]);
+
+  const resetForm = () => {
+    setForm(emptyForm);
+    setEditingId(null);
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setErrorMessage('');
+    setStatusMessage('');
+    const validationError = validatePost(form);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
+    if (!supabase) {
+      setErrorMessage(supabaseConfigurationMessage);
+      return;
+    }
+
+    const values = {
+      title: form.title.trim(),
+      subtitle: form.subtitle.trim(),
+      category: form.category.trim(),
+      content: form.content.split(/\n\s*\n/).map((paragraph) => paragraph.trim()).filter(Boolean),
+      tip: form.tip.trim(),
+    };
+    setIsSaving(true);
+    try {
+      const result = editingId
+        ? await supabase.from('blog_posts').update(values).eq('id', editingId).select('*').single()
+        : await supabase.from('blog_posts').insert(values).select('*').single();
+
+      if (result.error) {
+        setErrorMessage(`No se pudo ${editingId ? 'actualizar' : 'crear'} el artículo: ${result.error.message}`);
+        return;
+      }
+      if (!result.data) {
+        setErrorMessage('Supabase no devolvió el artículo guardado.');
+        return;
+      }
+
+      const savedPost = result.data as BlogPost;
+      setPosts((current) => editingId
+        ? current.map((post) => post.id === savedPost.id ? savedPost : post)
+        : [savedPost, ...current]);
+      setExpandedPost(savedPost.id);
+      setStatusMessage(editingId ? 'El artículo se actualizó correctamente.' : 'El artículo se publicó correctamente.');
+      resetForm();
+    } catch (error) {
+      setErrorMessage(`No se pudo guardar el artículo: ${error instanceof Error ? error.message : 'error inesperado.'}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDelete = async (post: BlogPost) => {
+    if (!window.confirm(`¿Borrar "${post.title}" y todos sus comentarios?`)) {
+      return;
+    }
+    if (!supabase) {
+      setErrorMessage(supabaseConfigurationMessage);
+      return;
+    }
+    setErrorMessage('');
+    setStatusMessage('');
+    setDeletingId(post.id);
+    try {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .delete()
+        .eq('id', post.id)
+        .select('id')
+        .single();
+
+      if (error) {
+        setErrorMessage(`No se pudo borrar el artículo: ${error.message}`);
+        return;
+      }
+      if (!data) {
+        setErrorMessage('No se encontró el artículo para borrar.');
+        return;
+      }
+      setPosts((current) => current.filter((item) => item.id !== post.id));
+      if (editingId === post.id) {
+        resetForm();
+      }
+      setStatusMessage('El artículo y sus comentarios se borraron correctamente.');
+    } catch (error) {
+      setErrorMessage(`No se pudo borrar el artículo: ${error instanceof Error ? error.message : 'error inesperado.'}`);
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const updateField = (field: keyof PostForm, value: string) => {
+    setForm((current) => ({ ...current, [field]: value }));
+  };
 
   return (
     <div className="min-h-screen bg-green-50">
       <PageSEO
         title="Blog de Cocina | Consejos y técnicas culinarias"
-        description="Artículos sobre cocina casera: errores comunes al cocinar pasta, planificación de comidas, especias para principiantes y más tips para recetas sencillas."
+        description="Artículos sobre cocina casera, técnicas, planificación de comidas y consejos prácticos."
         path="/blog"
       />
-      <PageHeader
-        title="Blog de Cocina"
-        subtitle="Artículos, consejos y trucos culinarios"
-      />
+      <PageHeader title="Blog de Cocina" subtitle="Artículos, consejos y trucos culinarios" />
 
-      <main className="container mx-auto px-4 py-8 sm:py-10 max-w-4xl">
-        {/* Blog intro */}
+      <main className="container mx-auto max-w-4xl px-4 py-8 sm:py-10">
+        {isAdmin && (
+          <section id="blog-admin-form" className="mb-10 rounded-2xl bg-white p-5 shadow-md sm:p-7">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-2xl font-semibold text-green-800">{editingId ? 'Editar artículo' : 'Crear artículo'}</h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  Administra los artículos del blog. Solo esta cuenta puede crearlos, editarlos o borrarlos.
+                </p>
+              </div>
+              {editingId && (
+                <button type="button" onClick={resetForm} className="inline-flex items-center gap-2 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50">
+                  <X className="h-4 w-4" aria-hidden="true" />
+                  Cancelar
+                </button>
+              )}
+            </div>
+            <form onSubmit={(event) => void handleSubmit(event)} className="grid gap-4">
+              <div>
+                <label htmlFor="blog-title" className="mb-1 block text-sm font-medium text-gray-700">Título</label>
+                <input id="blog-title" required minLength={5} maxLength={150} value={form.title} onChange={(event) => updateField('title', event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100" />
+              </div>
+              <div>
+                <label htmlFor="blog-subtitle" className="mb-1 block text-sm font-medium text-gray-700">Resumen</label>
+                <input id="blog-subtitle" required minLength={5} maxLength={200} value={form.subtitle} onChange={(event) => updateField('subtitle', event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100" />
+              </div>
+              <div>
+                <label htmlFor="blog-category" className="mb-1 block text-sm font-medium text-gray-700">Categoría</label>
+                <input id="blog-category" required minLength={2} maxLength={50} value={form.category} onChange={(event) => updateField('category', event.target.value)} className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100" placeholder="Ej.: Técnicas" />
+              </div>
+              <div>
+                <label htmlFor="blog-content" className="mb-1 block text-sm font-medium text-gray-700">Artículo (separa los párrafos con una línea vacía)</label>
+                <textarea id="blog-content" required rows={9} value={form.content} onChange={(event) => updateField('content', event.target.value)} className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100" />
+              </div>
+              <div>
+                <label htmlFor="blog-tip" className="mb-1 block text-sm font-medium text-gray-700">Consejo destacado</label>
+                <textarea id="blog-tip" required maxLength={1000} rows={3} value={form.tip} onChange={(event) => updateField('tip', event.target.value)} className="w-full resize-y rounded-lg border border-gray-300 px-3 py-2.5 focus:border-green-600 focus:outline-none focus:ring-2 focus:ring-green-100" />
+              </div>
+              <div>
+                <button type="submit" disabled={isSaving || deletingId !== null} className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-5 py-3 font-semibold text-white hover:bg-green-800 disabled:cursor-wait disabled:opacity-60">
+                  {editingId ? <Save className="h-5 w-5" aria-hidden="true" /> : <Plus className="h-5 w-5" aria-hidden="true" />}
+                  {isSaving ? 'Guardando...' : editingId ? 'Guardar cambios' : 'Publicar artículo'}
+                </button>
+              </div>
+            </form>
+            {errorMessage && <p role="alert" className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">{errorMessage}</p>}
+            {statusMessage && <p role="status" className="mt-4 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">{statusMessage}</p>}
+          </section>
+        )}
+
         <section className="mb-10">
-          <h2 className="text-2xl text-green-800 mb-4 border-b-2 border-green-300 pb-2">
-            Artículos Recientes
-          </h2>
-          <p className="text-gray-600">
-            Explora nuestras entradas más recientes con consejos prácticos, técnicas y recetas detalladas.
-            <br />
-            Nuestros autores son chefs y nutricionistas con experiencia en cocina casera.
-          </p>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b-2 border-green-300 pb-2">
+            <h2 className="text-2xl text-green-800">Artículos recientes</h2>
+            <div className="flex flex-wrap items-center gap-2">
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => document.getElementById('blog-admin-form')?.scrollIntoView({ behavior: 'smooth' })}
+                  className="inline-flex items-center gap-2 rounded-lg bg-green-700 px-3 py-2 text-sm font-semibold text-white hover:bg-green-800"
+                >
+                  <Pencil className="h-4 w-4" aria-hidden="true" />
+                  Administrar blogs
+                </button>
+              )}
+              <button type="button" onClick={() => void loadPosts()} disabled={isLoading} className="inline-flex items-center gap-2 rounded-lg border border-green-700 px-3 py-2 text-sm font-medium text-green-800 hover:bg-green-100 disabled:opacity-60">
+                <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} aria-hidden="true" />
+                Actualizar
+              </button>
+            </div>
+          </div>
+          <p className="text-gray-600">Lee artículos y comparte tus comentarios con la comunidad.</p>
         </section>
 
-        {/* Blog posts */}
-        {blogPosts.map((post) => (
-          <article key={post.id} className="bg-white rounded-xl shadow-md mb-8 overflow-hidden">
-            {/* Post header */}
-            <header className="p-6 border-b border-gray-100">
-              <div className="flex items-center gap-2 mb-3">
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs flex items-center gap-1">
-                  <Tag className="w-3 h-3" />
+        {isLoading ? (
+          <p role="status" className="rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">Cargando artículos...</p>
+        ) : posts.length === 0 ? (
+          <p className="rounded-xl bg-white p-8 text-center text-gray-600 shadow-sm">Todavía no hay artículos publicados.</p>
+        ) : posts.map((post) => (
+          <article key={post.id} className="mb-8 overflow-hidden rounded-xl bg-white shadow-md">
+            <header className="border-b border-gray-100 p-6">
+              <div className="mb-3 flex flex-wrap items-center gap-3">
+                <span className="flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-xs text-green-700">
+                  <Tag className="h-3 w-3" aria-hidden="true" />
                   {post.category}
                 </span>
-                <span className="text-gray-400 text-xs flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  {post.date}
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <Calendar className="h-3 w-3" aria-hidden="true" />
+                  <time dateTime={post.created_at}>{formattedDate(post.created_at)}</time>
                 </span>
-                <span className="text-gray-400 text-xs flex items-center gap-1">
-                  <User className="w-3 h-3" />
-                  {post.author}
+                <span className="flex items-center gap-1 text-xs text-gray-500">
+                  <User className="h-3 w-3" aria-hidden="true" />
+                  {post.author_name}
                 </span>
               </div>
-              <h2
-                className="text-green-800 mb-2 cursor-pointer hover:text-green-600 transition-colors text-lg sm:text-xl"
-                onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
-              >
-                {post.title}
-              </h2>
-              <p className="text-gray-500 text-sm sm:text-base">{post.subtitle}</p>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <button
+                    type="button"
+                    className="text-left text-lg font-semibold text-green-800 transition-colors hover:text-green-600 sm:text-xl"
+                    aria-expanded={expandedPost === post.id}
+                    onClick={() => setExpandedPost(expandedPost === post.id ? null : post.id)}
+                  >
+                    {post.title}
+                  </button>
+                  <p className="mt-2 text-sm text-gray-500 sm:text-base">{post.subtitle}</p>
+                </div>
+                {isAdmin && (
+                  <div className="flex shrink-0 items-center gap-1">
+                    <button type="button" disabled={isSaving || deletingId !== null} onClick={() => { setForm(formFromPost(post)); setEditingId(post.id); setErrorMessage(''); setStatusMessage(''); }} aria-label={`Editar ${post.title}`} className="rounded-lg p-2 text-gray-500 hover:bg-green-100 hover:text-green-800 disabled:opacity-50">
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <button type="button" disabled={isSaving || deletingId !== null} onClick={() => void handleDelete(post)} aria-label={`Borrar ${post.title}`} className="rounded-lg p-2 text-gray-500 hover:bg-red-100 hover:text-red-700 disabled:opacity-50">
+                      <Trash2 className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+              </div>
             </header>
 
-            {/* Post content */}
-            {expandedPost === post.id && (
+            {expandedPost === post.id ? (
               <div className="p-6">
-                <div className="space-y-4 mb-6">
-                  {post.content.map((paragraph, idx) => (
-                    <p key={idx} className="text-gray-700 leading-relaxed">
-                      {paragraph}
-                    </p>
+                <div className="mb-6 space-y-4">
+                  {post.content.map((paragraph, index) => (
+                    <p key={`${post.id}-${index}`} className="leading-relaxed text-gray-700">{paragraph}</p>
                   ))}
                 </div>
-
-                {/* Tip box with pre */}
-                <div className="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4 mb-4">
-                  <h5 className="text-green-800 mb-2">💡 Tip del Editor</h5>
-                  <pre className="text-green-700 text-sm whitespace-pre-wrap font-sans leading-relaxed">
-                    {post.tip}
-                  </pre>
-                </div>
-
-                <hr className="border-gray-200 my-6" />
-
-                <CommentSection comments={post.comments} postId={post.id} />
+                <aside className="mb-4 rounded-r-lg border-l-4 border-green-500 bg-green-50 p-4">
+                  <h3 className="mb-2 font-semibold text-green-800">Consejo del editor</h3>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-green-700">{post.tip}</p>
+                </aside>
+                <BlogComments postId={post.id} />
               </div>
-            )}
-
-            {expandedPost !== post.id && (
+            ) : (
               <div className="px-6 pb-5">
-                <button
-                  onClick={() => setExpandedPost(post.id)}
-                  className="mt-3 text-green-600 hover:text-green-700 text-sm underline"
-                >
+                <button type="button" onClick={() => setExpandedPost(post.id)} className="mt-3 text-sm text-green-700 underline hover:text-green-800">
                   Leer artículo completo →
                 </button>
               </div>
@@ -314,7 +371,6 @@ export function BlogPage() {
           </article>
         ))}
       </main>
-
       <PageFooter currentPage="/blog" />
     </div>
   );

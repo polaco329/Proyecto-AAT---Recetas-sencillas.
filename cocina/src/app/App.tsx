@@ -19,6 +19,8 @@ import { AboutUsPage } from './pages/AboutUsPage';
 import { LoginPage } from './pages/LoginPage';
 import { AccountPage } from './pages/AccountPage';
 import { CommunityRecipesPage } from './pages/CommunityRecipesPage';
+import { AdminRecipesPage } from './pages/AdminRecipesPage';
+import { isAdminEmail } from './lib/admin';
 
 declare global {
   interface Window {
@@ -53,6 +55,24 @@ function RequireAuth() {
   return <Outlet />;
 }
 
+function RequireAdmin() {
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-green-50 px-4 text-green-800">
+        <p role="status">Verificando tus permisos...</p>
+      </main>
+    );
+  }
+
+  if (!isAdminEmail(user?.email)) {
+    return <Navigate to="/" replace />;
+  }
+
+  return <Outlet />;
+}
+
 function AppShell() {
   useEffect(() => {
     document.documentElement.lang = 'es';
@@ -71,6 +91,9 @@ function AppShell() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<LoginPage />} />
           <Route element={<RequireAuth />}>
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin/recetas" element={<AdminRecipesPage />} />
+            </Route>
             <Route path="/" element={<HomePage />} />
             <Route path="/account" element={<AccountPage />} />
             <Route path="/publish-recipe" element={<CommunityRecipesPage />} />
